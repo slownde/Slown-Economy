@@ -20,6 +20,8 @@ public class BankGUI {
 
     private final SlownEconomy plugin;
     private final Player player;
+    private Window window;
+    private Gui gui;
 
     public BankGUI(SlownEconomy plugin, Player player) {
         this.plugin = plugin;
@@ -27,7 +29,18 @@ public class BankGUI {
     }
 
     public void open() {
-        Gui gui = Gui.normal()
+        plugin.getGUIManager().registerBankGUI(player.getUniqueId(), this);
+
+        bankBalanceItem = new BankBalanceItem();
+        coinsItem = new CoinsItem();
+        depositAllItem = new DepositAllItem();
+        deposit100Item = new Deposit100Item();
+        deposit1000Item = new Deposit1000Item();
+        withdrawAllItem = new WithdrawAllItem();
+        withdraw100Item = new Withdraw100Item();
+        withdraw1000Item = new Withdraw1000Item();
+
+        gui = Gui.normal()
                 .setStructure(
                         "# # # # # # # # #",
                         "# a b c d e f g #",
@@ -35,26 +48,46 @@ public class BankGUI {
                         "# # # # o # # # #"
                 )
                 .addIngredient('#', new BackgroundItem())
-                .addIngredient('a', new BankBalanceItem())
-                .addIngredient('b', new CoinsItem())
-                .addIngredient('c', new DepositAllItem())
-                .addIngredient('d', new Deposit100Item())
-                .addIngredient('e', new Deposit1000Item())
-                .addIngredient('f', new WithdrawAllItem())
-                .addIngredient('g', new Withdraw100Item())
-                .addIngredient('h', new Withdraw1000Item())
+                .addIngredient('a', bankBalanceItem)
+                .addIngredient('b', coinsItem)
+                .addIngredient('c', depositAllItem)
+                .addIngredient('d', deposit100Item)
+                .addIngredient('e', deposit1000Item)
+                .addIngredient('f', withdrawAllItem)
+                .addIngredient('g', withdraw100Item)
+                .addIngredient('h', withdraw1000Item)
                 .addIngredient('l', new CoinsGUIItem())
                 .addIngredient('n', new HelpItem())
                 .addIngredient('o', new CloseItem())
                 .build();
 
-        Window window = Window.single()
+        window = Window.single()
                 .setViewer(player)
                 .setTitle(ColorUtil.colorize("§2§lBank Management"))
                 .setGui(gui)
                 .build();
 
         window.open();
+    }
+
+    private BankBalanceItem bankBalanceItem;
+    private CoinsItem coinsItem;
+    private DepositAllItem depositAllItem;
+    private Deposit100Item deposit100Item;
+    private Deposit1000Item deposit1000Item;
+    private WithdrawAllItem withdrawAllItem;
+    private Withdraw100Item withdraw100Item;
+    private Withdraw1000Item withdraw1000Item;
+
+    public void updateGUI() {
+        if (bankBalanceItem != null) bankBalanceItem.notifyWindows();
+        if (coinsItem != null) coinsItem.notifyWindows();
+        if (depositAllItem != null) depositAllItem.notifyWindows();
+        if (deposit100Item != null) deposit100Item.notifyWindows();
+        if (deposit1000Item != null) deposit1000Item.notifyWindows();
+        if (withdrawAllItem != null) withdrawAllItem.notifyWindows();
+        if (withdraw100Item != null) withdraw100Item.notifyWindows();
+        if (withdraw1000Item != null) withdraw1000Item.notifyWindows();
     }
 
     private static class BackgroundItem extends AbstractItem {
@@ -145,7 +178,7 @@ public class BankGUI {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6" + String.format("%.2f", amount) +
                                 " Coins §7wurden eingezahlt!"));
-                        notifyWindows();
+                        updateGUI();
                     } else {
                         player.sendMessage(ColorUtil.component("§cFehler beim Einzahlen!"));
                     }
@@ -179,7 +212,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6100 Coins §7wurden eingezahlt!"));
-                        notifyWindows();
+                        updateGUI();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Coins!"));
                     }
@@ -213,7 +246,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§61000 Coins §7wurden eingezahlt!"));
-                        notifyWindows();
+                        updateGUI();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Coins!"));
                     }
@@ -254,7 +287,7 @@ public class BankGUI {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6" + String.format("%.2f", amount) +
                                 " Coins §7wurden abgehoben!"));
-                        notifyWindows();
+                        updateGUI();
                     } else {
                         player.sendMessage(ColorUtil.component("§cFehler beim Abheben!"));
                     }
@@ -288,7 +321,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6100 Coins §7wurden abgehoben!"));
-                        notifyWindows();
+                        updateGUI();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Bankguthaben!"));
                     }
@@ -322,7 +355,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§61000 Coins §7wurden abgehoben!"));
-                        notifyWindows();
+                        updateGUI();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Bankguthaben!"));
                     }
@@ -377,7 +410,7 @@ public class BankGUI {
         }
     }
 
-    private static class CloseItem extends AbstractItem {
+    private class CloseItem extends AbstractItem {
         @Override
         public ItemProvider getItemProvider() {
             return new ItemBuilder(Material.BARRIER)
@@ -392,6 +425,7 @@ public class BankGUI {
         @Override
         public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
             player.closeInventory();
+            plugin.getGUIManager().unregisterBankGUI(player.getUniqueId());
         }
     }
 }

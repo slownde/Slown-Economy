@@ -3,7 +3,6 @@ package de.syscall.gui;
 import de.syscall.SlownEconomy;
 import de.syscall.data.EconomyPlayer;
 import de.syscall.util.ColorUtil;
-import de.syscall.util.ColorUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -22,6 +21,11 @@ public class CoinsGUI {
 
     private final SlownEconomy plugin;
     private final Player player;
+    private Window window;
+    private Gui gui;
+    private CoinsInfoItem coinsInfoItem;
+    private BankInfoItem bankInfoItem;
+    private TotalWealthItem totalWealthItem;
 
     public CoinsGUI(SlownEconomy plugin, Player player) {
         this.plugin = plugin;
@@ -29,7 +33,13 @@ public class CoinsGUI {
     }
 
     public void open() {
-        Gui gui = Gui.normal()
+        plugin.getGUIManager().registerCoinsGUI(player.getUniqueId(), this);
+
+        coinsInfoItem = new CoinsInfoItem();
+        bankInfoItem = new BankInfoItem();
+        totalWealthItem = new TotalWealthItem();
+
+        gui = Gui.normal()
                 .setStructure(
                         "# # # # # # # # #",
                         "# a b c d e f g #",
@@ -37,9 +47,9 @@ public class CoinsGUI {
                         "# # # # o # # # #"
                 )
                 .addIngredient('#', new BackgroundItem())
-                .addIngredient('a', new CoinsInfoItem())
-                .addIngredient('b', new BankInfoItem())
-                .addIngredient('c', new TotalWealthItem())
+                .addIngredient('a', coinsInfoItem)
+                .addIngredient('b', bankInfoItem)
+                .addIngredient('c', totalWealthItem)
                 .addIngredient('d', new TransferItem())
                 .addIngredient('e', new DepositItem())
                 .addIngredient('f', new WithdrawItem())
@@ -47,13 +57,19 @@ public class CoinsGUI {
                 .addIngredient('o', new CloseItem())
                 .build();
 
-        Window window = Window.single()
+        window = Window.single()
                 .setViewer(player)
                 .setTitle(ColorUtil.colorize("§6§lCoins Management"))
                 .setGui(gui)
                 .build();
 
         window.open();
+    }
+
+    public void updateGUI() {
+        if (coinsInfoItem != null) coinsInfoItem.notifyWindows();
+        if (bankInfoItem != null) bankInfoItem.notifyWindows();
+        if (totalWealthItem != null) totalWealthItem.notifyWindows();
     }
 
     private static class BackgroundItem extends AbstractItem {
@@ -266,7 +282,7 @@ public class CoinsGUI {
         }
     }
 
-    private static class CloseItem extends AbstractItem {
+    private class CloseItem extends AbstractItem {
         @Override
         public ItemProvider getItemProvider() {
             return new ItemBuilder(Material.BARRIER)
@@ -281,6 +297,7 @@ public class CoinsGUI {
         @Override
         public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
             player.closeInventory();
+            plugin.getGUIManager().unregisterCoinsGUI(player.getUniqueId());
         }
     }
 }

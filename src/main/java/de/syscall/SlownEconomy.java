@@ -5,9 +5,12 @@ import de.syscall.command.BankCommand;
 import de.syscall.command.CoinsCommand;
 import de.syscall.command.TransferCommand;
 import de.syscall.database.DatabaseManager;
+import de.syscall.listener.GUIUpdateListener;
+import de.syscall.listener.InventoryCloseListener;
 import de.syscall.listener.PlayerJoinListener;
 import de.syscall.manager.CacheManager;
 import de.syscall.manager.EconomyManager;
+import de.syscall.manager.GUIManager;
 import de.syscall.util.EconomyValidator;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -20,6 +23,7 @@ public class SlownEconomy extends JavaPlugin {
     private CacheManager cacheManager;
     private EconomyManager economyManager;
     private EconomyValidator economyValidator;
+    private GUIManager guiManager;
 
     @Override
     public void onEnable() {
@@ -33,6 +37,7 @@ public class SlownEconomy extends JavaPlugin {
             this.cacheManager = new CacheManager(this);
             this.economyManager = new EconomyManager(this);
             this.economyValidator = new EconomyValidator(this);
+            this.guiManager = new GUIManager();
 
             databaseManager.initialize();
 
@@ -118,6 +123,8 @@ public class SlownEconomy extends JavaPlugin {
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(new GUIUpdateListener(this), this);
+        getServer().getPluginManager().registerEvents(new InventoryCloseListener(this), this);
     }
 
     public static SlownEconomy getInstance() {
@@ -142,5 +149,9 @@ public class SlownEconomy extends JavaPlugin {
 
     public EconomyValidator getEconomyValidator() {
         return economyValidator;
+    }
+
+    public GUIManager getGUIManager() {
+        return guiManager;
     }
 }
