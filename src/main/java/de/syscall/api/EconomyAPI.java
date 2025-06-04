@@ -120,6 +120,14 @@ public class EconomyAPI {
         return transferCoins(fromPlayer.getUniqueId(), toPlayer.getUniqueId(), amount);
     }
 
+    public CompletableFuture<Boolean> transferBankBalance(UUID fromPlayer, UUID toPlayer, double amount) {
+        return plugin.getEconomyManager().transferBankBalance(fromPlayer, toPlayer, amount);
+    }
+
+    public CompletableFuture<Boolean> transferBankBalance(OfflinePlayer fromPlayer, OfflinePlayer toPlayer, double amount) {
+        return transferBankBalance(fromPlayer.getUniqueId(), toPlayer.getUniqueId(), amount);
+    }
+
     public CompletableFuture<EconomyPlayer> getEconomyPlayer(UUID playerUuid) {
         return plugin.getEconomyManager().getEconomyPlayer(playerUuid);
     }

@@ -45,6 +45,7 @@ public class TransferCommand implements CommandExecutor, TabCompleter {
             if (feePercentage > 0) {
                 player.sendMessage(ColorUtil.component("§7Gebühr: §6" + String.format("%.1f", feePercentage) + "%"));
             }
+            player.sendMessage(ColorUtil.component("§c§lWICHTIG: §7Nur Bankguthaben kann übertragen werden!"));
             return true;
         }
 
@@ -71,18 +72,18 @@ public class TransferCommand implements CommandExecutor, TabCompleter {
         }
 
         if (sender.getName().equalsIgnoreCase(targetName)) {
-            sender.sendMessage(ColorUtil.component("§cDu kannst dir nicht selbst Coins senden!"));
+            sender.sendMessage(ColorUtil.component("§cDu kannst dir nicht selbst Geld senden!"));
             return;
         }
 
         double fee = plugin.getEconomyValidator().getTransferFee(amount);
         double totalCost = plugin.getEconomyValidator().getTotalTransferCost(amount);
 
-        double senderCoins = SlownEconomy.getAPI().getCoins(sender);
-        if (senderCoins < totalCost) {
-            sender.sendMessage(ColorUtil.component("§cNicht genug Coins!"));
+        double senderBankBalance = SlownEconomy.getAPI().getBankBalance(sender);
+        if (senderBankBalance < totalCost) {
+            sender.sendMessage(ColorUtil.component("§cNicht genug Bankguthaben!"));
             sender.sendMessage(ColorUtil.component("§7Benötigt: §6" + String.format("%.2f", totalCost) + " Coins"));
-            sender.sendMessage(ColorUtil.component("§7Verfügbar: §6" + String.format("%.2f", senderCoins) + " Coins"));
+            sender.sendMessage(ColorUtil.component("§7Verfügbar: §6" + String.format("%.2f", senderBankBalance) + " Coins"));
             if (fee > 0) {
                 sender.sendMessage(ColorUtil.component("§7(§6" + String.format("%.2f", amount) + " §7+ §6" +
                         String.format("%.2f", fee) + " §7Gebühr)"));
@@ -96,11 +97,11 @@ public class TransferCommand implements CommandExecutor, TabCompleter {
                 return;
             }
 
-            plugin.getEconomyManager().transferCoins(sender.getUniqueId(), target.getUuid(), amount).thenAccept(success -> {
+            plugin.getEconomyManager().transferBankBalance(sender.getUniqueId(), target.getUuid(), amount).thenAccept(success -> {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         sender.sendMessage(ColorUtil.component("§6" + String.format("%.2f", amount) +
-                                " Coins §7wurden an §6" + target.getName() + " §7übertragen!"));
+                                " Coins §7wurden aus deinem Bankguthaben an §6" + target.getName() + " §7übertragen!"));
 
                         if (fee > 0) {
                             sender.sendMessage(ColorUtil.component("§7Gebühr: §6" + String.format("%.2f", fee) + " Coins"));
@@ -109,7 +110,7 @@ public class TransferCommand implements CommandExecutor, TabCompleter {
                         Player targetPlayer = plugin.getServer().getPlayer(target.getUuid());
                         if (targetPlayer != null) {
                             targetPlayer.sendMessage(ColorUtil.component("§7Du hast §6" + String.format("%.2f", amount) +
-                                    " Coins §7von §6" + sender.getName() + " §7erhalten!"));
+                                    " Coins §7von §6" + sender.getName() + " §7auf dein Bankkonto erhalten!"));
                         }
                     } else {
                         sender.sendMessage(ColorUtil.component("§cFehler beim Transfer! Möglicherweise Maximum erreicht."));

@@ -224,6 +224,45 @@ public class EconomyManager {
         });
     }
 
+    public CompletableFuture<Boolean> transferBankBalance(UUID fromUuid, UUID toUuid, double amount) {
+        if (amount <= 0) return CompletableFuture.completedFuture(false);
+        if (fromUuid.equals(toUuid)) return CompletableFuture.completedFuture(false);
+
+        if (!isTransferValid(amount)) {
+            return CompletableFuture.completedFuture(false);
+        }
+
+        double fee = calculateTransferFee(amount);
+        double totalDeduction = amount + fee;
+
+        return getEconomyPlayer(fromUuid).thenCompose(fromPlayer -> {
+            if (fromPlayer.getBankBalance() < totalDeduction) {
+                return CompletableFuture.completedFuture(false);
+            }
+
+            return getEconomyPlayer(toUuid).thenApply(toPlayer -> {
+                if (toPlayer.wouldExceedBankLimit(amount)) {
+                    return false;
+                }
+
+                CoinsTransferEvent event = new CoinsTransferEvent(fromPlayer, toPlayer, amount);
+                Bukkit.getPluginManager().callEvent(event);
+
+                if (event.isCancelled()) {
+                    return false;
+                }
+
+                fromPlayer.removeBankBalance(totalDeduction);
+                toPlayer.addBankBalance(amount);
+
+                plugin.getCacheManager().updatePlayer(fromPlayer);
+                plugin.getCacheManager().updatePlayer(toPlayer);
+
+                return true;
+            });
+        });
+    }
+
     private boolean isTransferValid(double amount) {
         if (!plugin.getConfig().getBoolean("economy.transfer.enabled", true)) {
             return false;
