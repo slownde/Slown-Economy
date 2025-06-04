@@ -19,6 +19,8 @@ public class PlayerJoinListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
+        plugin.getCacheManager().cancelPlayerRemoval(player.getUniqueId());
+
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             plugin.getCacheManager().loadPlayer(player.getUniqueId(), player.getName());
         });
@@ -30,6 +32,8 @@ public class PlayerJoinListener implements Listener {
 
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             plugin.getCacheManager().savePlayer(player.getUniqueId()).thenRun(() -> {
+                plugin.getCacheManager().schedulePlayerRemoval(player.getUniqueId());
+
                 plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                     plugin.getCacheManager().removePlayer(player.getUniqueId());
                 }, 1200L);

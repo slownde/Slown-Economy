@@ -6,6 +6,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +16,7 @@ public class CacheManager {
     private final SlownEconomy plugin;
     private final Map<UUID, EconomyPlayer> playerCache;
     private final Map<String, UUID> nameToUuidCache;
+    private final Set<UUID> pendingRemovals;
     private BukkitTask saveTask;
     private BukkitTask cleanupTask;
 
@@ -22,6 +24,7 @@ public class CacheManager {
         this.plugin = plugin;
         this.playerCache = new ConcurrentHashMap<>();
         this.nameToUuidCache = new ConcurrentHashMap<>();
+        this.pendingRemovals = ConcurrentHashMap.newKeySet();
         startTasks();
     }
 
@@ -45,6 +48,8 @@ public class CacheManager {
     }
 
     public CompletableFuture<EconomyPlayer> loadPlayer(UUID uuid, String name) {
+        pendingRemovals.remove(uuid);
+
         EconomyPlayer cached = playerCache.get(uuid);
         if (cached != null) {
             cached.updateLastSeen();
@@ -84,6 +89,7 @@ public class CacheManager {
 
     public void updatePlayer(EconomyPlayer player) {
         player.setModified(true);
+        player.updateLastSeen();
         playerCache.put(player.getUuid(), player);
         nameToUuidCache.put(player.getName().toLowerCase(), player.getUuid());
     }
@@ -92,15 +98,29 @@ public class CacheManager {
         EconomyPlayer player = playerCache.get(uuid);
         if (player != null && player.isModified()) {
             return plugin.getDatabaseManager().savePlayer(player).thenRun(() -> {
+                player.setModified(false);
             });
         }
         return CompletableFuture.completedFuture(null);
     }
 
+    public void schedulePlayerRemoval(UUID uuid) {
+        pendingRemovals.add(uuid);
+    }
+
+    public void cancelPlayerRemoval(UUID uuid) {
+        pendingRemovals.remove(uuid);
+    }
+
     public void removePlayer(UUID uuid) {
+        if (!pendingRemovals.contains(uuid)) {
+            return;
+        }
+
         EconomyPlayer player = playerCache.remove(uuid);
         if (player != null) {
             nameToUuidCache.remove(player.getName().toLowerCase());
+            pendingRemovals.remove(uuid);
 
             if (player.isModified()) {
                 plugin.getDatabaseManager().savePlayer(player);
@@ -109,9 +129,13 @@ public class CacheManager {
     }
 
     public void saveModifiedPlayers() {
-        playerCache.values().stream()
+        playerCache.values().parallelStream()
                 .filter(EconomyPlayer::isModified)
-                .forEach(player -> plugin.getDatabaseManager().savePlayer(player));
+                .forEach(player -> {
+                    plugin.getDatabaseManager().savePlayer(player).thenRun(() -> {
+                        player.setModified(false);
+                    });
+                });
     }
 
     public void saveAll() {
@@ -125,7 +149,8 @@ public class CacheManager {
 
         for (EconomyPlayer player : playerCache.values()) {
             if (player.isModified()) {
-                plugin.getDatabaseManager().savePlayer(player);
+                plugin.getDatabaseManager().savePlayer(player).join();
+                player.setModified(false);
             }
         }
 
@@ -138,10 +163,17 @@ public class CacheManager {
 
         playerCache.entrySet().removeIf(entry -> {
             EconomyPlayer player = entry.getValue();
+            UUID uuid = entry.getKey();
+
+            if (plugin.getServer().getPlayer(uuid) != null) {
+                return false;
+            }
+
             boolean shouldRemove = (currentTime - player.getLastSeen()) > maxAge;
 
             if (shouldRemove) {
                 nameToUuidCache.remove(player.getName().toLowerCase());
+                pendingRemovals.remove(uuid);
 
                 if (player.isModified()) {
                     plugin.getDatabaseManager().savePlayer(player);
@@ -162,5 +194,6 @@ public class CacheManager {
         saveModifiedPlayers();
         playerCache.clear();
         nameToUuidCache.clear();
+        pendingRemovals.clear();
     }
 }

@@ -1,5 +1,7 @@
 package de.syscall.data;
 
+import de.syscall.SlownEconomy;
+
 import java.util.UUID;
 
 public class EconomyPlayer {
@@ -100,6 +102,14 @@ public class EconomyPlayer {
         return false;
     }
 
+    public boolean wouldExceedCoinsLimit(double additionalAmount) {
+        return (this.coins + additionalAmount) > getMaxCoins();
+    }
+
+    public boolean wouldExceedBankLimit(double additionalAmount) {
+        return (this.bankBalance + additionalAmount) > getMaxBankBalance();
+    }
+
     public long getLastSeen() {
         return lastSeen;
     }
@@ -130,11 +140,11 @@ public class EconomyPlayer {
     }
 
     private double getMaxCoins() {
-        return 999999999.0;
+        return SlownEconomy.getInstance().getEconomyValidator().getMaxCoins();
     }
 
     private double getMaxBankBalance() {
-        return 999999999.0;
+        return SlownEconomy.getInstance().getEconomyValidator().getMaxBankBalance();
     }
 
     @Override
