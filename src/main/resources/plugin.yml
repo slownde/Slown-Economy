@@ -3,7 +3,7 @@ version: '1.0'
 main: de.syscall.SlownEconomy
 api-version: '1.21'
 authors: [80x0]
-description: Economy System für das Slown Network
+description: Economy System für das Slown Network.
 website: https://slown.de
 
 permissions:
