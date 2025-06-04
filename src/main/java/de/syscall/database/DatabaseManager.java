@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class DatabaseManager {
 
@@ -32,10 +33,6 @@ public class DatabaseManager {
                 setupMySQL();
             } else {
                 setupSQLite();
-            }
-
-            if (!testConnection()) {
-                throw new RuntimeException("Database connection test failed");
             }
 
             createTables();
@@ -266,10 +263,6 @@ public class DatabaseManager {
 
     public CompletableFuture<EconomyPlayer> loadPlayer(UUID uuid, String name) {
         return CompletableFuture.supplyAsync(() -> {
-            if (!initialized) {
-                throw new RuntimeException("Database not initialized");
-            }
-
             try (Connection connection = getConnection();
                  PreparedStatement statement = connection.prepareStatement(
                          "SELECT uuid, name, coins, bank_balance, last_seen FROM economy_players WHERE uuid = ?")) {
@@ -302,10 +295,6 @@ public class DatabaseManager {
 
     public CompletableFuture<Boolean> savePlayer(EconomyPlayer player) {
         return CompletableFuture.supplyAsync(() -> {
-            if (!initialized) {
-                throw new RuntimeException("Database not initialized");
-            }
-
             String sql = useMySQL ?
                     "INSERT INTO economy_players (uuid, name, coins, bank_balance, last_seen) " +
                             "VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE " +
@@ -335,10 +324,6 @@ public class DatabaseManager {
 
     public CompletableFuture<List<EconomyPlayer>> getTopPlayers(int limit, boolean byCoins) {
         return CompletableFuture.supplyAsync(() -> {
-            if (!initialized) {
-                throw new RuntimeException("Database not initialized");
-            }
-
             List<EconomyPlayer> topPlayers = new ArrayList<>();
             String orderBy = byCoins ? "coins" : "bank_balance";
 
@@ -371,10 +356,6 @@ public class DatabaseManager {
 
     public CompletableFuture<EconomyPlayer> findPlayerByName(String name) {
         return CompletableFuture.supplyAsync(() -> {
-            if (!initialized) {
-                throw new RuntimeException("Database not initialized");
-            }
-
             try (Connection connection = getConnection();
                  PreparedStatement statement = connection.prepareStatement(
                          "SELECT uuid, name, coins, bank_balance, last_seen FROM economy_players WHERE name = ? LIMIT 1")) {
@@ -403,8 +384,8 @@ public class DatabaseManager {
     }
 
     public Connection getConnection() throws SQLException {
-        if (!initialized || dataSource == null) {
-            throw new SQLException("Database not initialized");
+        if (dataSource == null) {
+            throw new SQLException("DataSource not initialized");
         }
 
         Connection connection = dataSource.getConnection();

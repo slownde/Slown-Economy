@@ -3,12 +3,11 @@ package de.syscall.gui;
 import de.syscall.SlownEconomy;
 import de.syscall.data.EconomyPlayer;
 import de.syscall.util.ColorUtil;
+import de.syscall.util.ColorUtil;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.ItemProvider;
@@ -23,8 +22,6 @@ public class CoinsGUI {
 
     private final SlownEconomy plugin;
     private final Player player;
-    private BukkitTask updateTask;
-    private Gui gui;
 
     public CoinsGUI(SlownEconomy plugin, Player player) {
         this.plugin = plugin;
@@ -32,7 +29,7 @@ public class CoinsGUI {
     }
 
     public void open() {
-        this.gui = Gui.normal()
+        Gui gui = Gui.normal()
                 .setStructure(
                         "# # # # # # # # #",
                         "# a b c d e f g #",
@@ -46,14 +43,7 @@ public class CoinsGUI {
                 .addIngredient('d', new TransferItem())
                 .addIngredient('e', new DepositItem())
                 .addIngredient('f', new WithdrawItem())
-                .addIngredient('g', new TopPlayersItem())
-                .addIngredient('h', new HistoryItem())
-                .addIngredient('i', new StatsItem())
-                .addIngredient('j', new PayItem())
-                .addIngredient('k', new ExchangeItem())
                 .addIngredient('l', new BankGUIItem())
-                .addIngredient('m', new RefreshItem())
-                .addIngredient('n', new SettingsItem())
                 .addIngredient('o', new CloseItem())
                 .build();
 
@@ -64,21 +54,6 @@ public class CoinsGUI {
                 .build();
 
         window.open();
-        startUpdateTask();
-    }
-
-    private void startUpdateTask() {
-        updateTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (player.getOpenInventory().getTopInventory().getHolder() != gui) {
-                    cancel();
-                    return;
-                }
-
-                gui.notifyAll();
-            }
-        }.runTaskTimer(plugin, 20L, 20L);
     }
 
     private static class BackgroundItem extends AbstractItem {
@@ -272,112 +247,6 @@ public class CoinsGUI {
         }
     }
 
-    private static class TopPlayersItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.GOLDEN_HELMET)
-                    .setDisplayName("§6Top Spieler")
-                    .setLegacyLore(List.of(
-                            "§7Rangliste der reichsten",
-                            "§7Spieler im Netzwerk",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Die Rangliste wird in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
-    private static class HistoryItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.WRITABLE_BOOK)
-                    .setDisplayName("§9Transaktions-Historie")
-                    .setLegacyLore(List.of(
-                            "§7Verlauf deiner letzten",
-                            "§7Coin-Transaktionen",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Die Transaktions-Historie wird in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
-    private class StatsItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.PAPER)
-                    .setDisplayName("§eStatistiken")
-                    .setLegacyLore(List.of(
-                            "§7Deine Economy-Statistiken",
-                            "§7und Aktivitäten",
-                            "",
-                            "§7Cache-Größe: §6" + plugin.getCacheManager().getCacheSize(),
-                            "",
-                            "§eKlicken für Details"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            EconomyPlayer economyPlayer = plugin.getCacheManager().getPlayer(player.getUniqueId());
-
-            player.sendMessage(ColorUtil.component("§6═══ Economy Statistiken ═══"));
-            if (economyPlayer != null) {
-                player.sendMessage(ColorUtil.component("§7Coins: §6" + String.format("%.2f", economyPlayer.getCoins())));
-                player.sendMessage(ColorUtil.component("§7Bank: §6" + String.format("%.2f", economyPlayer.getBankBalance())));
-                player.sendMessage(ColorUtil.component("§7Gesamt: §6" + String.format("%.2f", economyPlayer.getTotalWealth())));
-                player.sendMessage(ColorUtil.component("§7Letzter Login: §6" + new java.util.Date(economyPlayer.getLastSeen())));
-            }
-        }
-    }
-
-    private static class PayItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.EMERALD)
-                    .setDisplayName("§aBezahlen")
-                    .setLegacyLore(List.of(
-                            "§7Schnelles Bezahlen",
-                            "§7für Shops und Services",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Das Bezahlsystem wird in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
-    private static class ExchangeItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.GOLD_BLOCK)
-                    .setDisplayName("§6Börse")
-                    .setLegacyLore(List.of(
-                            "§7Coins gegen Items",
-                            "§7oder andere Währungen",
-                            "§7tauschen",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Die Börse wird in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
     private class BankGUIItem extends AbstractItem {
         @Override
         public ItemProvider getItemProvider() {
@@ -397,50 +266,7 @@ public class CoinsGUI {
         }
     }
 
-    private class RefreshItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.COMPASS)
-                    .setDisplayName("§bAktualisieren")
-                    .setLegacyLore(List.of(
-                            "§7Lade die neuesten",
-                            "§7Daten vom Server",
-                            "",
-                            "§eKlicken zum Aktualisieren"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            plugin.getCacheManager().loadPlayer(player.getUniqueId(), player.getName()).thenRun(() -> {
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    gui.notifyAll();
-                    player.sendMessage(ColorUtil.component("§aDaten aktualisiert!"));
-                });
-            });
-        }
-    }
-
-    private static class SettingsItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.REDSTONE)
-                    .setDisplayName("§cEinstellungen")
-                    .setLegacyLore(List.of(
-                            "§7Economy-Einstellungen",
-                            "§7und Präferenzen",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Einstellungen werden in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
-    private class CloseItem extends AbstractItem {
+    private static class CloseItem extends AbstractItem {
         @Override
         public ItemProvider getItemProvider() {
             return new ItemBuilder(Material.BARRIER)
@@ -455,9 +281,6 @@ public class CoinsGUI {
         @Override
         public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
             player.closeInventory();
-            if (updateTask != null) {
-                updateTask.cancel();
-            }
         }
     }
 }

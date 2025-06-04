@@ -3,18 +3,16 @@ package de.syscall.gui;
 import de.syscall.SlownEconomy;
 import de.syscall.data.EconomyPlayer;
 import de.syscall.util.ColorUtil;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.jetbrains.annotations.NotNull;
 import xyz.xenondevs.invui.gui.Gui;
 import xyz.xenondevs.invui.item.ItemProvider;
 import xyz.xenondevs.invui.item.builder.ItemBuilder;
 import xyz.xenondevs.invui.item.impl.AbstractItem;
 import xyz.xenondevs.invui.window.Window;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -22,8 +20,6 @@ public class BankGUI {
 
     private final SlownEconomy plugin;
     private final Player player;
-    private BukkitTask updateTask;
-    private Gui gui;
 
     public BankGUI(SlownEconomy plugin, Player player) {
         this.plugin = plugin;
@@ -31,7 +27,7 @@ public class BankGUI {
     }
 
     public void open() {
-        this.gui = Gui.normal()
+        Gui gui = Gui.normal()
                 .setStructure(
                         "# # # # # # # # #",
                         "# a b c d e f g #",
@@ -47,11 +43,7 @@ public class BankGUI {
                 .addIngredient('f', new WithdrawAllItem())
                 .addIngredient('g', new Withdraw100Item())
                 .addIngredient('h', new Withdraw1000Item())
-                .addIngredient('i', new InterestItem())
-                .addIngredient('j', new HistoryItem())
-                .addIngredient('k', new TransferItem())
                 .addIngredient('l', new CoinsGUIItem())
-                .addIngredient('m', new RefreshItem())
                 .addIngredient('n', new HelpItem())
                 .addIngredient('o', new CloseItem())
                 .build();
@@ -63,21 +55,6 @@ public class BankGUI {
                 .build();
 
         window.open();
-        startUpdateTask();
-    }
-
-    private void startUpdateTask() {
-        updateTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (player.getOpenInventory().getTopInventory().getHolder() != gui) {
-                    cancel();
-                    return;
-                }
-
-                gui.notifyAll();
-            }
-        }.runTaskTimer(plugin, 20L, 20L);
     }
 
     private static class BackgroundItem extends AbstractItem {
@@ -168,6 +145,7 @@ public class BankGUI {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6" + String.format("%.2f", amount) +
                                 " Coins §7wurden eingezahlt!"));
+                        notifyWindows();
                     } else {
                         player.sendMessage(ColorUtil.component("§cFehler beim Einzahlen!"));
                     }
@@ -201,6 +179,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6100 Coins §7wurden eingezahlt!"));
+                        notifyWindows();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Coins!"));
                     }
@@ -234,6 +213,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§61000 Coins §7wurden eingezahlt!"));
+                        notifyWindows();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Coins!"));
                     }
@@ -274,6 +254,7 @@ public class BankGUI {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6" + String.format("%.2f", amount) +
                                 " Coins §7wurden abgehoben!"));
+                        notifyWindows();
                     } else {
                         player.sendMessage(ColorUtil.component("§cFehler beim Abheben!"));
                     }
@@ -307,6 +288,7 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§6100 Coins §7wurden abgehoben!"));
+                        notifyWindows();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Bankguthaben!"));
                     }
@@ -340,70 +322,12 @@ public class BankGUI {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
                     if (success) {
                         player.sendMessage(ColorUtil.component("§61000 Coins §7wurden abgehoben!"));
+                        notifyWindows();
                     } else {
                         player.sendMessage(ColorUtil.component("§cNicht genug Bankguthaben!"));
                     }
                 });
             });
-        }
-    }
-
-    private static class InterestItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.CLOCK)
-                    .setDisplayName("§9Zinsen")
-                    .setLegacyLore(List.of(
-                            "§7Erhalte Zinsen auf",
-                            "§7dein Bankguthaben",
-                            "",
-                            "§7Zinssatz: §60.1% täglich",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Das Zinssystem wird in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
-    private static class HistoryItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.WRITABLE_BOOK)
-                    .setDisplayName("§9Bank-Historie")
-                    .setLegacyLore(List.of(
-                            "§7Verlauf deiner letzten",
-                            "§7Bank-Transaktionen",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Die Bank-Historie wird in einem zukünftigen Update verfügbar sein!"));
-        }
-    }
-
-    private static class TransferItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.PAPER)
-                    .setDisplayName("§eBank-Transfer")
-                    .setLegacyLore(List.of(
-                            "§7Überweise direkt von",
-                            "§7deinem Bankkonto",
-                            "",
-                            "§7Feature kommt bald!"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            player.sendMessage(ColorUtil.component("§7Bank-Transfers werden in einem zukünftigen Update verfügbar sein!"));
         }
     }
 
@@ -423,30 +347,6 @@ public class BankGUI {
         @Override
         public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
             new CoinsGUI(plugin, player).open();
-        }
-    }
-
-    private class RefreshItem extends AbstractItem {
-        @Override
-        public ItemProvider getItemProvider() {
-            return new ItemBuilder(Material.COMPASS)
-                    .setDisplayName("§bAktualisieren")
-                    .setLegacyLore(List.of(
-                            "§7Lade die neuesten",
-                            "§7Bankdaten vom Server",
-                            "",
-                            "§eKlicken zum Aktualisieren"
-                    ));
-        }
-
-        @Override
-        public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
-            plugin.getCacheManager().loadPlayer(player.getUniqueId(), player.getName()).thenRun(() -> {
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    gui.notifyAll();
-                    player.sendMessage(ColorUtil.component("§aBankdaten aktualisiert!"));
-                });
-            });
         }
     }
 
@@ -477,7 +377,7 @@ public class BankGUI {
         }
     }
 
-    private class CloseItem extends AbstractItem {
+    private static class CloseItem extends AbstractItem {
         @Override
         public ItemProvider getItemProvider() {
             return new ItemBuilder(Material.BARRIER)
@@ -492,9 +392,6 @@ public class BankGUI {
         @Override
         public void handleClick(@NotNull ClickType clickType, @NotNull Player player, @NotNull InventoryClickEvent event) {
             player.closeInventory();
-            if (updateTask != null) {
-                updateTask.cancel();
-            }
         }
     }
 }
