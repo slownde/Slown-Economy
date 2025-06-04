@@ -5,7 +5,6 @@ import de.syscall.command.BankCommand;
 import de.syscall.command.CoinsCommand;
 import de.syscall.command.TransferCommand;
 import de.syscall.database.DatabaseManager;
-import de.syscall.gui.GUIHandler;
 import de.syscall.listener.PlayerJoinListener;
 import de.syscall.manager.CacheManager;
 import de.syscall.manager.EconomyManager;
@@ -54,7 +53,6 @@ public class SlownEconomy extends JavaPlugin {
     @Override
     public void onDisable() {
         try {
-            GUIHandler.cleanupAllTasks();
 
             if (economyManager != null) {
                 economyManager.shutdown();
