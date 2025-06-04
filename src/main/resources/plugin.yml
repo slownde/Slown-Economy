@@ -1,0 +1,41 @@
+name: Slown-Economy
+version: '1.0'
+main: de.syscall.SlownEconomy
+api-version: '1.21'
+authors: [80x0]
+description: Economy System für das Slown Network
+website: https://slown.de
+
+permissions:
+  slowneconomy.*:
+    description: Alle Economy Permissions
+    default: op
+  slowneconomy.admin:
+    description: Administrator Permissions
+    default: op
+  slowneconomy.use:
+    description: Economy System verwenden
+    default: true
+  slowneconomy.coins:
+    description: Coins Commands verwenden
+    default: true
+  slowneconomy.bank:
+    description: Bank Commands verwenden
+    default: true
+  slowneconomy.transfer:
+    description: Coins übertragen
+    default: true
+
+commands:
+  coins:
+    description: Coins System verwalten
+    usage: /coins [spieler|set|add|remove] [spieler] [amount]
+    permission: slowneconomy.coins
+  bank:
+    description: Bank System verwalten
+    usage: /bank [deposit|withdraw|balance|set|add|remove] [amount]
+    permission: slowneconomy.bank
+  transfer:
+    description: Coins an andere Spieler übertragen
+    usage: /transfer <spieler> <amount>
+    permission: slowneconomy.transfer

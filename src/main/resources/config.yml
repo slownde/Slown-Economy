@@ -1,0 +1,25 @@
+database:
+  mysql:
+    enabled: false
+    host: "localhost"
+    port: 3306
+    database: "slown_economy"
+    username: "root"
+    password: ""
+
+cache:
+  save-interval: 300
+  cleanup-interval: 600
+  max-age: 1800
+
+economy:
+  starting-coins: 100.0
+  starting-bank-balance: 0.0
+  max-coins: 999999999.0
+  max-bank-balance: 999999999.0
+  
+  transfer:
+    enabled: true
+    min-amount: 1.0
+    max-amount: 100000.0
+    fee-percentage: 0.0
